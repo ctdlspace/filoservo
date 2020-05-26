@@ -70,7 +70,11 @@ server.post('/upload', (request, response) => {
 			files.push(meta)
 		}
 	}
-	response.send(202, { message: 'files uploaded', files })
+	response.writeHead(200, {
+		'Content-Type': 'text/json',
+		'Access-Control-Allow-Origin': '*'
+	})
+	response.send({ message: 'files uploaded', files })
 })
 
 server.get('/*', restify.plugins.serveStatic({
