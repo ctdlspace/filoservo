@@ -15,6 +15,14 @@ server.use(restify.plugins.bodyParser({
 
 server.use(restify.plugins.queryParser())
 
+// server.use(function crossOrigin(req, res, next) {
+// 	console.log('crossOrigin')
+// 		res.header('Access-Control-Allow-Origin', '*')
+// 		res.header('Access-Control-Allow-Headers', 'X-Requested-With')
+// 		return next()
+// 	},
+// )
+
 server.get('/download/:name', function(request, response) {
 	const name = request.params.name
 	const filePath = path.join(config.dir, request.headers.host, 'files', name)
@@ -68,13 +76,12 @@ server.post('/upload', (request, response) => {
 			fs.renameSync(request.files[key].path, `${dir}/files/${name}`)
 			fs.writeFileSync(`${dir}/files/${name}.json`, JSON.stringify(meta))
 			files.push(meta)
+
 		}
 	}
-	response.writeHead(200, {
-		'Content-Type': 'text/json',
-		'Access-Control-Allow-Origin': '*'
-	})
-	response.send({ message: 'files uploaded', files })
+	response.header('Access-Control-Allow-Origin', '*')
+	response.header('Access-Control-Allow-Headers', 'X-Requested-With')
+	response.send(202, { message: 'files uploaded', files })
 })
 
 server.get('/*', restify.plugins.serveStatic({
@@ -83,6 +90,6 @@ server.get('/*', restify.plugins.serveStatic({
 }))
 
 server.listen(config.port, function() {
-	console.log({config})
+	console.log({ config })
 	console.log('%s listening at %s', server.name, server.url)
 })
