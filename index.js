@@ -43,29 +43,31 @@ server.post('/upload', (request, response) => {
 	const host = request.headers.host
 	const dir = `${config.dir}/${host}`
 	const files = []
+
 	console.debug('/upload', host, dir)
+
 	if (!fs.existsSync(dir)) {
 		fs.mkdirSync(dir)
 		fs.mkdirSync(`${dir}/files`)
 		fs.writeFileSync(`${dir}/settings.json`, '{}')
 	}
+
 	for (let key in request.files) {
 		if (request.files.hasOwnProperty(key)) {
 			const name = v4()
+			const mimeType = mime.getType(request.files[key].name)
+			if (!mimeType) {
+				continue
+			}
 			const meta = {
 				originalName: request.files[key].name,
 				name: name,
-				mime: mime.getType(request.files[key].name),
-				ext: mime.getExtension(mime.getType(request.files[key].name)),
+				mime: mimeType,
+				ext: mime.getExtension(mimeType),
 			}
 			fs.renameSync(request.files[key].path, `${dir}/files/${name}`)
 			fs.writeFileSync(`${dir}/files/${name}.json`, JSON.stringify(meta))
 			files.push(meta)
-			fs.unlink(request.files[key].path, (err) => {
-				if (err) {
-					console.error(err)
-				}
-			})
 		}
 	}
 	response.send(202, { message: 'files uploaded', files })
