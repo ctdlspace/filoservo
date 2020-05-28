@@ -15,19 +15,21 @@ server.use(restify.plugins.bodyParser({
 
 server.use(restify.plugins.queryParser())
 
-// server.use(function crossOrigin(req, res, next) {
-// 	console.log('crossOrigin')
-// 		res.header('Access-Control-Allow-Origin', '*')
-// 		res.header('Access-Control-Allow-Headers', 'X-Requested-With')
-// 		return next()
-// 	},
-// )
-
-server.get('/download/:name', function(request, response) {
+server.get('/view/:name', function(request, response) {
 	const name = request.params.name
-	const filePath = path.join(config.dir, request.headers.host, 'files', name)
-	const fileMetaPath = path.join(config.dir, request.headers.host, 'files', `${name}.json`)
-
+	const [nameWithoutExt] = name.split('.')
+	const filePath = path.join(
+		config.dir,
+		request.headers.host,
+		'files',
+		name,
+	)
+	const fileMetaPath = path.join(
+		config.dir,
+		request.headers.host,
+		'files',
+		`${nameWithoutExt}.json`,
+	)
 	if (!fs.existsSync(filePath)) {
 		response.send(
 			404,
@@ -37,12 +39,44 @@ server.get('/download/:name', function(request, response) {
 	}
 	const stat = fs.statSync(filePath)
 	const meta = JSON.parse(fs.readFileSync(fileMetaPath, 'utf8'))
-
 	response.writeHead(200, {
 		'Content-Type': meta.mime,
 		'Content-Length': stat.size,
 	})
+	const readStream = fs.createReadStream(filePath)
+	readStream.pipe(response)
+})
 
+server.get('/download/:name', function(request, response) {
+	const name = request.params.name
+	const [nameWithoutExt] = name.split('.')
+	const filePath = path.join(
+		config.dir,
+		request.headers.host,
+		'files',
+		name,
+	)
+	const fileMetaPath = path.join(
+		config.dir,
+		request.headers.host,
+		'files',
+		`${nameWithoutExt}.json`,
+	)
+	if (!fs.existsSync(filePath)) {
+		response.send(
+			404,
+			{ message: `file "${name}" not found on "${request.headers.host}"` },
+		)
+		return
+	}
+	const stat = fs.statSync(filePath)
+	const meta = JSON.parse(fs.readFileSync(fileMetaPath, 'utf8'))
+	console.log(`attachment; filename="${meta.originalName}"'`)
+	response.writeHead(200, {
+		'Content-Type': meta.mime,
+		'Content-Length': stat.size,
+		'Content-Disposition': `attachment; filename="${meta.originalName}"`
+	})
 	const readStream = fs.createReadStream(filePath)
 	readStream.pipe(response)
 })
@@ -62,21 +96,24 @@ server.post('/upload', (request, response) => {
 
 	for (let key in request.files) {
 		if (request.files.hasOwnProperty(key)) {
-			const name = v4()
 			const mimeType = mime.getType(request.files[key].name)
+			const ext = mime.getExtension(mimeType)
+			const name = v4()
+			const nameWithExt = `${name}.${ext}`
+			const nameWithOriginalName = `${nameWithExt}?${request.files[key].name}`
 			if (!mimeType) {
 				continue
 			}
 			const meta = {
 				originalName: request.files[key].name,
-				name: name,
+				name: nameWithExt,
+				nameWithOriginalName: nameWithOriginalName,
 				mime: mimeType,
-				ext: mime.getExtension(mimeType),
+				ext: ext,
 			}
-			fs.renameSync(request.files[key].path, `${dir}/files/${name}`)
+			fs.renameSync(request.files[key].path, `${dir}/files/${nameWithExt}`)
 			fs.writeFileSync(`${dir}/files/${name}.json`, JSON.stringify(meta))
 			files.push(meta)
-
 		}
 	}
 	response.header('Access-Control-Allow-Origin', '*')
