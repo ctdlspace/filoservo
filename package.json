@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "release": "standard-version && git push --follow-tags origin master",
     "dev": "nodemon --ignore './data/*' -r esm index.js",
     "start": "(export FILOSERVO_PORT=8800 && node -r esm index.js)",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -15,6 +16,7 @@
     "mime": "^2.4.5",
     "nodemon": "^2.0.4",
     "restify": "^8.5.1",
+    "standard-version": "^8.0.0",
     "uuid": "^8.1.0"
   }
 }
