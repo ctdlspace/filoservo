@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "replace": "replace 'ctdlspace.github.com' 'github.com' CHANGELOG.md",
     "release": "standard-version && git push --follow-tags origin master",
     "dev": "nodemon --ignore './data/*' -r esm index.js",
     "start": "(export FILOSERVO_PORT=8800 && node -r esm index.js)",
@@ -15,8 +16,14 @@
     "esm": "^3.2.25",
     "mime": "^2.4.5",
     "nodemon": "^2.0.4",
+    "replace": "^1.2.0",
     "restify": "^8.5.1",
     "standard-version": "^8.0.0",
     "uuid": "^8.1.0"
+  },
+  "standard-version": {
+    "scripts": {
+      "postchangelog": "npm run replace"
+    }
   }
 }
