@@ -91,7 +91,10 @@ server.post('/upload', (request, response) => {
 	if (!fs.existsSync(dir)) {
 		fs.mkdirSync(dir)
 		fs.mkdirSync(`${dir}/files`)
-		fs.writeFileSync(`${dir}/settings.json`, '{}')
+		fs.writeFileSync(
+			`${dir}/settings.json`,
+			'{}'
+		)
 	}
 
 	for (let key in request.files) {
@@ -100,19 +103,26 @@ server.post('/upload', (request, response) => {
 			const ext = mime.getExtension(mimeType)
 			const name = v4()
 			const nameWithExt = `${name}.${ext}`
-			const nameWithOriginalName = `${nameWithExt}?${request.files[key].name}`
+			const originalName = encodeURIComponent(request.files[key].name)
+			const nameWithOriginalName = `${nameWithExt}?${originalName}`
 			if (!mimeType) {
 				continue
 			}
 			const meta = {
-				originalName: request.files[key].name,
+				originalName: originalName,
 				name: nameWithExt,
 				nameWithOriginalName: nameWithOriginalName,
 				mime: mimeType,
 				ext: ext,
 			}
-			fs.renameSync(request.files[key].path, `${dir}/files/${nameWithExt}`)
-			fs.writeFileSync(`${dir}/files/${name}.json`, JSON.stringify(meta))
+			fs.renameSync(
+				request.files[key].path,
+				`${dir}/files/${nameWithExt}`
+			)
+			fs.writeFileSync(
+				`${dir}/files/${name}.json`,
+				JSON.stringify(meta)
+			)
 			files.push(meta)
 		}
 	}
